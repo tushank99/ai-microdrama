@@ -1,0 +1,7 @@
+episode,title,duration_s,hook_score,cliff_score,rule_hook,rule_cliff,cliff_type,issue,fix,last_line,flags,scored_by,llm_error
+1,Loud But Resolved,70,10,0,10,0,-,-,-,They hug. The sister pops champagne. Everyone cheers.,WEAK_CLIFFHANGER,rules,
+2,Quiet But Ominous,72,3,3,3,3,-,-,-,"A man's voice through the monitor, softly singing the same lullaby.","WEAK_CLIFFHANGER,WEAK_HOOK",rules,
+3,Cliffhanger In The Middle,70,5,3,5,3,-,-,-,RYAN: Let's go home. I'll cook tonight.,"WEAK_CLIFFHANGER,WEAK_HOOK",rules,
+4,Decision Ending,70,3,3,3,3,-,-,-,We don't see which one.,"WEAK_CLIFFHANGER,WEAK_HOOK",rules,
+5,Generic Open,68,3,6,3,6,-,-,-,Mia reaches for it. A hand slams down on the drive. Ryan's father.,WEAK_HOOK,rules,
+6,Sad But Closed,70,7,3,7,3,-,-,-,They walk away hand in hand as the sun breaks through.,WEAK_CLIFFHANGER,rules,

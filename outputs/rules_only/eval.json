@@ -1,0 +1,31 @@
+{
+  "weak_cliff": {
+    "tp": 4,
+    "fp": 5,
+    "fn": 0,
+    "precision": 0.44,
+    "recall": 1.0,
+    "misses": [],
+    "false_alarms": [
+      1,
+      4,
+      5,
+      7,
+      10
+    ]
+  },
+  "weak_hook": {
+    "tp": 4,
+    "fp": 4,
+    "fn": 0,
+    "precision": 0.5,
+    "recall": 1.0,
+    "misses": [],
+    "false_alarms": [
+      4,
+      5,
+      7,
+      10
+    ]
+  }
+}
