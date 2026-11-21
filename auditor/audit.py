@@ -71,7 +71,7 @@ def llm_scores(episodes: list, batch: int = 10, context: str = "", **llm_opts) -
             for e in chunk)
         raw = llm.complete(PROMPT.format(context=context or "-", episodes=body), **llm_opts)
         for row in llm.extract_json(raw):
-            out[int(row["episode"])] = row
+            out[int(re.search(r"\d+", str(row["episode"])).group())] = row
     return out
 
 

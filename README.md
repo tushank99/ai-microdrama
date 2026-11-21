@@ -58,5 +58,5 @@ auditor/llm.py       Provider-agnostic LLM client with retries
 auditor/audit.py     Rule scoring, batched LLM judge, flag logic
 inputs/              Synthetic test shows and labels
 outputs/             Raw outputs from evaluation runs
-docs/solution.pdf    Solution write-up
+docs/                Solution write-up (PDF and HTML source)
 ```

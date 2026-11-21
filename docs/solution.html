@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cliffhanger Auditor</title>
+<style>
+  @page { size: A4; margin: 9mm 11mm; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 7.9pt; line-height: 1.32; color: #1f2937; margin: 0; }
+  h1 { font-size: 15pt; margin: 0 0 2px; color: #111827; letter-spacing: -0.2px; }
+  .sub { color: #6b7280; font-size: 8.6pt; margin-bottom: 6px; }
+  .lead { font-size: 8.6pt; margin: 3px 0 5px; color: #111827; }
+  h2 { font-size: 8.2pt; text-transform: uppercase; letter-spacing: 0.8px; color: #1d4ed8; margin: 7px 0 3px;
+       border-bottom: 1px solid #dbe3f0; padding-bottom: 2px; }
+  h3 { font-size: 9pt; margin: 2px 0 3px; color: #111827; }
+  p { margin: 0 0 4px; }
+  ul { margin: 0 0 4px; padding-left: 14px; }
+  li { margin-bottom: 2px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 7px; background: #fafbfd; }
+  .tag { display: inline-block; font-size: 6.6pt; font-weight: 700; letter-spacing: 0.5px; padding: 1px 5px; border-radius: 3px; margin-bottom: 3px; }
+  .code { background: #e5e7eb; color: #374151; }
+  .llm { background: #dbeafe; color: #1e40af; }
+  .human { background: #fef3c7; color: #92400e; }
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin: 4px 0 3px; }
+  .step { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 6px; background: #fff; font-size: 7.6pt; }
+  .step b { display: block; font-size: 8.2pt; margin-bottom: 1px; color: #111827; }
+  .note { font-size: 7.4pt; color: #6b7280; }
+  table { width: 100%; border-collapse: collapse; font-size: 7.8pt; margin: 2px 0 4px; }
+  th, td { border: 1px solid #e5e7eb; padding: 2px 5px; text-align: left; vertical-align: top; }
+  th { background: #f3f4f6; font-weight: 600; }
+  .num { font-size: 15pt; font-weight: 700; color: #1d4ed8; line-height: 1.1; }
+  .stat { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px 7px; }
+  .stat span { font-size: 7.4pt; color: #4b5563; }
+  .quote { font-family: Consolas, monospace; font-size: 7.6pt; background: #f3f4f6; border-left: 3px solid #93c5fd; padding: 3px 6px; margin: 3px 0; }
+  .fix { border-left-color: #34d399; }
+  .chip { display: inline-block; font-size: 6.8pt; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-right: 3px; background: #fde8e8; color: #9b1c1c; }
+  .chip.p { background: #fdf2d8; color: #8a5a00; }
+  .chip.h { background: #e1effe; color: #1e429f; }
+  .closing { margin-top: 7px; font-weight: 600; color: #111827; text-align: center; font-size: 8.8pt; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<h1>Cliffhanger Auditor: catching weak hooks and cliffhangers at script stage</h1>
+<div class="sub">Kuku AI Generalist Assignment · Problem 3: Find your own problem · Tushank Raut · 123CE0113</div>
+<p class="lead">Give the Cliffhanger Auditor a show's screenplay and it scores every episode on two moments: the first seconds, where a viewer decides to stay, and the last seconds, where they decide to play the next episode. Weak episodes are flagged before production, with the reason and a rewrite of the final beat.</p>
+
+<div class="cols">
+<div>
+  <h2>The problem</h2>
+  <p><b>Who:</b> the story editor who reviews AI-generated microdrama scripts before they go to video generation.</p>
+  <p><b>Why it matters:</b> a microdrama earns episode by episode. After the free episodes, every next episode is a paid unlock, so the last five seconds of each episode are the moment of sale. One flat ending, such as a goodnight, a hug that settles the conflict or a calm breakfast, loses viewers for every episode after it. The episodes right before the paywall carry the most weight.</p>
+  <p><b>Why AI scripts need this:</b> language models like to tidy things up. Left alone, they resolve conflict at the end of a scene, which is the opposite of what a vertical episode needs.</p>
+  <p><b>Why this over Problems 1 and 2:</b> Problem 1 helps after a show is made and brings in new viewers. This step sits upstream, where a fix costs one rewritten line instead of regenerated video, and it protects revenue on every episode of every show. Problem 2 is outside Kuku's core work.</p>
+</div>
+<div>
+  <h2>Assumptions</h2>
+  <ul>
+    <li>Scripts are text, with an <code>EPISODE N</code> header and an <code>[mm:ss]</code> timestamp on each beat, the same shape as the input pack.</li>
+    <li>Hook window = first ~15 s of the page. Cliffhanger window = last ~20 s.</li>
+    <li>The paywall episode is a setting (default 10). The episodes on either side of it are held to a stricter bar.</li>
+    <li>Judging is from the script only. Acting, music and visuals are confirmed later on footage.</li>
+    <li>The tool advises and the editor decides. It never edits the script itself.</li>
+    <li>Test inputs are two synthetic shows I wrote in the format of the pack (18 episodes), so they can be shared publicly.</li>
+  </ul>
+</div>
+</div>
+
+<h2>How it works</h2>
+<div class="flow">
+  <div class="step"><span class="tag code">CODE</span><b>1 · Parse</b>Script into episodes and timestamped beats. Cut out the opening and ending windows.</div>
+  <div class="step"><span class="tag code">CODE</span><b>2 · Rule score</b>Tension, open-ending and resolution signals give a fast 0–10 baseline.</div>
+  <div class="step"><span class="tag llm">LLM</span><b>3 · Judge</b>Reads 10 episodes per call as a story editor. Returns hook, cliffhanger, type, issue and a rewrite.</div>
+  <div class="step"><span class="tag code">CODE</span><b>4 · Flag</b>Thresholds, paywall weighting, and rule-vs-model disagreement checks.</div>
+  <div class="step"><span class="tag human">EDITOR</span><b>5 · Approve</b>Reviews the flagged list and accepts, edits or rejects each rewrite.</div>
+</div>
+<p class="note">The model judges and suggests. Code owns the thresholds, the flags and the paywall logic, so the same input always produces the same flags for a given model output.</p>
+
+<h2>What makes it different</h2>
+<div class="cols3">
+  <div class="card"><h3>01 · Both retention moments</h3>Every episode is checked at the start and at the end. The hook decides if the viewer stays; the cliffhanger decides if they unlock the next episode. Each one gets a score, a type (reveal, threat, interruption, betrayal, arrival, decision, question) and a reason.</div>
+  <div class="card"><h3>02 · Paywall-aware</h3>Weak endings are not treated equally. Episodes next to the paywall get a stricter threshold and a <b>PAYWALL_RISK</b> flag, so the editor fixes the episodes that cost the most money first.</div>
+  <div class="card"><h3>03 · Two opinions, one referee</h3>Keyword rules and the LLM score every episode independently. When they differ by 4 or more points, the episode goes to the editor as <b>HUMAN_CHECK</b>. Disagreement is surfaced, never silently resolved.</div>
+  <div class="card"><h3>04 · Fixes, not just scores</h3>Each flagged episode comes with a one-line rewrite of the final beat that uses only characters and facts already in the episode. The editor gets something to act on in seconds.</div>
+  <div class="card"><h3>05 · Any model, one setting</h3>Groq, Google Gemini, any OpenAI-compatible API, Anthropic or a local Claude CLI. Switching is one setting. If a model call fails, the tool falls back to rule scores and says so, so a review is never blocked.</div>
+  <div class="card"><h3>06 · Measurable on every run</h3>Pass a labels file and the tool prints precision and recall for weak hooks and weak cliffhangers. A new model is checked against editor labels before it replaces the current one.</div>
+</div>
+
+<div class="cols" style="margin-top:4px">
+<div>
+  <h2>How an episode is judged</h2>
+  <table>
+    <tr><th>Check</th><th>Question</th><th>Checked by</th><th>Flag</th></tr>
+    <tr><td>Hook</td><td>Does something stop a scroller in the opening seconds: conflict, shock, a reveal, a strong line?</td><td>Judge, with rules alongside</td><td>WEAK_HOOK below 6</td></tr>
+    <tr><td>Cliffhanger</td><td>Does the episode end on an open question? Endings that resolve or calm down score low.</td><td>Judge, with rules alongside</td><td>WEAK_CLIFFHANGER below 6</td></tr>
+    <tr><td>Paywall</td><td>Is this episode next to the paywall, with a cliffhanger below 8?</td><td>Code</td><td>PAYWALL_RISK</td></tr>
+    <tr><td>Agreement</td><td>Do rules and model differ by 4+ points?</td><td>Code</td><td>HUMAN_CHECK</td></tr>
+  </table>
+</div>
+<div>
+  <h2>What the editor gets</h2>
+  <p><b>A web app</b> (Streamlit): upload, paste or pick a script, choose the model and paywall episode, and run. It shows summary counts, a per-episode score chart against the threshold, and each flagged episode with its opening, ending, issue and suggested final beat.</p>
+  <p><b>Per episode:</b> hook score, cliffhanger score, cliffhanger type, rule scores, flags, issue, suggested rewrite, last line and which model scored it.</p>
+  <p><b>Per show:</b> the full table as CSV and JSON, ready for a review sheet, plus a command-line runner for batch use.</p>
+  <p><b>Cost at volume:</b> one model call covers 10 episodes, so a 60-episode show is about 6 calls and roughly 20k tokens. That runs on free tiers today and costs a few cents per show on paid APIs. Rule scoring is free and instant.</p>
+</div>
+</div>
+
+
+<h2>A real output</h2>
+<div class="cols">
+<div class="card">
+  <h3>Episode 9, the episode before the paywall · flagged</h3>
+  <span class="chip">WEAK_CLIFFHANGER</span><span class="chip">WEAK_HOOK</span><span class="chip p">PAYWALL_RISK</span>
+  <p style="margin-top:4px">Hook 4 · Cliffhanger 1 · Type: none</p>
+  <div class="quote">[01:05] Lena nods slowly. The tension leaves her shoulders.<br>[01:15] LENA: Okay. I believe you. Goodnight, Adrian.</div>
+  <p><b>Issue:</b> Lena accepts the explanation and says goodnight, which resolves the tension the episode built.</p>
+  <div class="quote fix">LENA: (quietly) Okay. But Mrs. Hale said you chose me for a reason. Tell me that reason.</div>
+  <p class="note">The rewrite reuses a line planted in Episode 8 and turns the last beat into an open question before the viewer has to pay.</p>
+</div>
+<div class="card">
+  <h3>Episode 7, a tricky ending · routed to the editor</h3>
+  <span class="chip h">HUMAN_CHECK</span>
+  <p style="margin-top:4px">Rules: cliffhanger 0 · Judge: cliffhanger 8, type reveal</p>
+  <div class="quote">[01:12] They hug. Over Adrian's shoulder, Lena sees Mrs. Hale walking away with an empty syringe.</div>
+  <p>The rules see "hug" and mark the ending as resolved. The judge reads the final image as a reveal. Because the two disagree strongly, the episode is not failed or passed silently; it goes to the editor with both scores.</p>
+  <p class="note">The same pattern caught a quiet but ominous ending in the hard test set (a lullaby, then a stranger's voice on the baby monitor): rules 3, judge 9.</p>
+</div>
+</div>
+
+<h2>Results</h2>
+<div class="cols3" style="grid-template-columns: repeat(4, 1fr);">
+  <div class="stat"><div class="num">18</div><span>episodes across two test shows, labelled before any run</span></div>
+  <div class="stat"><div class="num">7 / 7</div><span>weak cliffhangers caught by both LLM judges, with no false alarms</span></div>
+  <div class="stat"><div class="num">0.44 → 1.00</div><span>cliffhanger precision, rules alone vs rules + LLM judge (Show A)</span></div>
+  <div class="stat"><div class="num">2</div><span>LLM providers tested end to end (Groq, Claude), plus a rules-only mode</span></div>
+</div>
+<table style="margin-top:5px">
+  <tr><th>Test set</th><th>Scoring</th><th>Weak cliffhanger: precision / recall</th><th>Weak hook: precision / recall</th></tr>
+  <tr><td>Show A (12 episodes)</td><td>Rules only</td><td>0.44 / 1.00</td><td>0.50 / 1.00</td></tr>
+  <tr><td>Show A</td><td>Groq gpt-oss-120b</td><td>1.00 / 1.00</td><td>1.00 / 1.00</td></tr>
+  <tr><td>Show A</td><td>Claude Haiku</td><td>1.00 / 1.00</td><td>1.00 / 1.00</td></tr>
+  <tr><td>Hard cases (6 episodes)</td><td>Rules only</td><td>0.60 / 1.00</td><td>0.50 / 1.00</td></tr>
+  <tr><td>Hard cases</td><td>Groq gpt-oss-120b</td><td>1.00 / 1.00</td><td>0.67 / 1.00</td></tr>
+  <tr><td>Hard cases</td><td>Claude Haiku</td><td>1.00 / 1.00</td><td>1.00 / 1.00</td></tr>
+</table>
+<p>The hard set was written to fool keyword rules: a loud ending that is fully resolved, a quiet ending that is a strong cliffhanger, a shock in the middle that is undone by the end, a withheld decision, and a sad but closed ending. Rules alone catch every weak episode but flag strong ones too. The LLM judge removes almost all of those false alarms, and the rules stay useful as a free safety net and a second opinion.</p>
+
+<div class="cols">
+<div>
+  <h2>Known limits</h2>
+  <ul>
+    <li><b>Rewrites need an editor.</b> Detection is reliable on the test sets; the suggested lines are not always. In 3 of 15 rewrites the model broke story logic, for example contradicting a reveal from the same episode or bringing in an object from another episode. Rewrites are suggestions by design.</li>
+    <li><b>Script only.</b> Acting, music and shot choice can make a quiet ending land. The editor confirms on footage.</li>
+    <li><b>Episodes are judged one at a time.</b> A deliberate breather episode in the arc can be flagged; the editor can dismiss it.</li>
+    <li><b>Scores differ by model.</b> After a model switch, the threshold is rechecked on the labelled set using the built-in evaluation.</li>
+    <li><b>Small test set.</b> 18 episodes written and labelled by me. The next check is editor labels on a full show from the pack.</li>
+  </ul>
+</div>
+<div>
+  <h2>How I would know it works with a real team</h2>
+  <ul>
+    <li><b>Agreement:</b> on past shows, compare flags with the endings editors marked as weak. Target recall above 0.9, so nothing an editor would catch is missed.</li>
+    <li><b>Adoption:</b> share of flags the editor acts on, and share of rewrites used as written or lightly edited.</li>
+    <li><b>Business outcome:</b> next-episode play rate and paywall unlock rate for fixed episodes against a matched set left as written.</li>
+    <li><b>Time saved:</b> editor minutes per show for the hook and cliffhanger pass.</li>
+  </ul>
+  <h2>AI tools, and where they got it wrong</h2>
+  <p>Claude Code (built the pipeline and app with me), Groq gpt-oss-120b and Claude Haiku (judges), Gemini (connected as a provider). <b>Where it went wrong:</b> the first scoring rules treated tension words as a cliffhanger. A hug that ended on a syringe reveal scored 0, and five strong endings were flagged as weak (precision 0.44). I kept the rules as a second opinion instead of the final score, and added the HUMAN_CHECK flag for when they disagree with the judge. The judge also invents facts in some rewrites, which is why every rewrite goes through the editor.</p>
+</div>
+</div>
+
+<p class="closing">Cliffhanger Auditor turns "read every episode for weak endings" into a short, ranked list of fixes, starting with the episodes that cost the most.</p>
+
+</body>
+</html>
